@@ -24,15 +24,16 @@ apiKEY=""
 email=""
 domain=""
 zone_identifier=""
+SHELL_PATH=$(cd $(dirname $0); pwd)
 
-echo "[info] $(date) : start ddns." >> ./ddns.log
+echo "[info] $(date) : start ddns." >> $SHELL_PATH/ddns.log
 #ping -c 1 baidu.com > /dev/null 2>&1
 #ping -c 1 google.com > /dev/null 2>&1
 curl ip.sb > /dev/null 2>&1
 if [ $? -ne 0 ]
 then
-  echo "[err] $(date) : network error." >> ./ddns.log
-  echo "[info] $(date) : end of ddns." >> ./ddns.log
+  echo "[err] $(date) : network error." >> $SHELL_PATH/ddns.log
+  echo "[info] $(date) : end of ddns." >> $SHELL_PATH/ddns.log
   exit
 fi
 
@@ -50,8 +51,8 @@ identifier=$(echo $remote_result | jq ".result[0].id" | sed 's/\"//g')
 
 if [ $remote_ip == "null" ]
 then
-  echo "[err] $(date) : can't find DNS record." >> ./ddns.log
-  echo "[info] $(date) : end of ddns." >> ./ddns.log
+  echo "[err] $(date) : can't find DNS record." >> $SHELL_PATH/ddns.log
+  echo "[info] $(date) : end of ddns." >> $SHELL_PATH/ddns.log
   exit
 fi
 
@@ -64,19 +65,19 @@ local_ip=$(curl http://ipv4.ip.sb -k -s)
 
 if [ $local_ip != $remote_ip ]
 then
-  echo "[info] $(date) : local_ip and remote_ip are different." >> ./ddns.log
+  echo "[info] $(date) : local_ip and remote_ip are different." >> $SHELL_PATH/ddns.log
   update_result=$(curl -s -k -X PUT "https://api.cloudflare.com/client/v4/zones/$zone_identifier/dns_records/$identifier" -H "X-Auth-Email: $email" -H "X-Auth-Key: $apiKEY" -H "Content-Type: application/json" --data "{\"type\":\"A\",\"name\":\"$domain\",\"content\":\"$local_ip\",\"ttl\":120,\"proxied\":false}")
   if [ $(echo $update_result | jq ".success") == true ]
   then
-    echo "[info] $(date) : update success!" >> ./ddns.log
+    echo "[info] $(date) : update success!" >> $SHELL_PATH/ddns.log
   else
-    echo "[err] $(date) : update fail!" >> ./ddns.log
-	echo "[err] $(date) : Response is " >> ./ddns.log
-	echo "                $update_result" >> ./ddns.log
+    echo "[err] $(date) : update fail!" >> $SHELL_PATH/ddns.log
+	echo "[err] $(date) : Response is " >> $SHELL_PATH/ddns.log
+	echo "                $update_result" >> $SHELL_PATH/ddns.log
   fi
 else
-  echo "[info] $(date) : local_ip and remote_ip are the same." >> ./ddns.log
+  echo "[info] $(date) : local_ip and remote_ip are the same." >> $SHELL_PATH/ddns.log
 fi
 
-echo "[info] $(date) : end of ddns." >> ./ddns.log
+echo "[info] $(date) : end of ddns." >> $SHELL_PATH/ddns.log
 
